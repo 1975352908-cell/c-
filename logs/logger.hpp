@@ -15,7 +15,7 @@
 #include <cstdarg>
 #include <type_traits>
 
-namespace bitlog {
+namespace mylog {
 
 class SyncLogger;
 class AsyncLogger;
@@ -411,6 +411,6 @@ public:
     }
 };
 
-} // namespace bitlog
+}
 
-#endif // __M_LOG_H__
+#endif 
