@@ -23,6 +23,31 @@ int main()
     mysql_close(coon);
     return 0;
 }
+// #include<iostream>
+// #include<mysql.h>
+// int main()
+// {
+//     MYSQL* coon=mysql_init(nullptr);
+//     if(coon==nullptr)
+//     {
+//         std::cout<<"mysql_init failed"<<std::endl;
+//         return -1;
+//     }
+//     char*host="localhost";
+//     char*user="root";
+//     char*password="111111";
+//     char*db="test";
+//     unsigned int port=3306;
+//     if(mysql_real_connect(coon,host,user,password,db,port,nullptr,0))
+//     {
+//         std::cout<<"mysql_real_connect failed"<<std::endl;
+//         return -1;
+//     }
+//     std::cout<<"mysql_real_connect success"<<std::endl;
+
+//     mysql_close(coon);
+//     return 0;
+// }
 
 #include<iostream>
 #include<mysql.h>
@@ -64,4 +89,8 @@ int main()
         return -1;
     }
     return 0;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 86e72353f7898e3b0d0b72984686710854dc186b

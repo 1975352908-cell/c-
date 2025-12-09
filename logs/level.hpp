@@ -9,7 +9,6 @@ namespace mylog
     class LogLevel
     {
      public:
-        //日志等级
         enum class value
         {
             UNKNOW=0,

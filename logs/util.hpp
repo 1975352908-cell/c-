@@ -50,7 +50,6 @@ namespace mylog
                 {
                     return ".";
                 }
-                //加一保证取到最后一个分隔符;
                 return pathname.substr(0,pos+1);
             }
             
