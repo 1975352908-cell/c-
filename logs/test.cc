@@ -1,5 +1,5 @@
 //util.cpp单元测试;
-#include"util.hpp"
+//#include"util.hpp"
 // int main()
 // {
 //     std::cout<<mylog::util::Date::now()<<std::endl;
@@ -11,7 +11,7 @@
 
 
 
-#include"level.hpp"
+//#include"level.hpp"
 // int main()
 // {
 //     std::cout<<mylog::LogLevel::ToString(mylog::LogLevel::value::DEBUG)<<std::endl;
@@ -24,26 +24,70 @@
 //     return 0;
 // }
 
-#include "util.hpp"
-#include "level.hpp"
-#include "message.hpp"
-#include "format.hpp"
-#include <iostream>
 
-int main()
-{
-    mylog::LogMsg msg(
-        mylog::LogLevel::value::DEBUG,
-        30,
-        "main.cc",
-        "root",
-        "功能测试"
-    );
+// int main()
+// {
+//     mylog::LogMsg msg(
+//         mylog::LogLevel::value::DEBUG,
+//         30,
+//         "main.cc",
+//         "root",
+//         "功能测试"
+//     );
 
-    mylog::Formatter fmt;  // 用默认模式 "[%d{%H:%M:%S}][%t][%p][%c][%f:%l] %m%n"
+//     mylog::Formatter fmt;  // 用默认模式 "[%d{%H:%M:%S}][%t][%p][%c][%f:%l] %m%n"
 
-    std::string str = fmt.format(msg);
-    std::cout << str;
+//     std::string str = fmt.format(msg);
+//     std::cout << str;
 
-    return 0;
-}
+//     return 0;
+// }
+
+//测试sink落地模块;
+// int main()
+// {
+//     mylog::LogMsg msg(mylog::LogLevel::value::INFO,53,"main.c","root","格式化功能测试...");
+//     mylog::Formatter fmt;
+//     std::string str=fmt.format(msg);
+//     mylog::LogSink::ptr stdout_lsp=mylog::SinkFactory::create<mylog::StdoutSink>();
+//     mylog::LogSink::ptr file_lsp=mylog::SinkFactory::create<mylog::FileSink>("./logs/test.file");
+//     mylog::LogSink::ptr roll_lsp=mylog::SinkFactory::create<mylog::RollSink>("./logs/roll-",1024*1024);
+//     //输出日志;
+//     stdout_lsp->log(str.c_str(),str.size());
+//     file_lsp->log(str.c_str(),str.size());
+
+//     size_t cur_size=0;
+//     size_t count=0;
+//     while(cur_size<1024*1024*10)
+//     {
+//         std::string tmp=str+ std::to_string(count++);
+//         roll_lsp->log(tmp.c_str(),tmp.size());
+//         cur_size+=tmp.size();
+//     }
+    
+//     return 0;
+// }
+
+
+////////////////////////////测试logger模块;
+// #include "util.hpp"
+// #include "level.hpp"
+// #include "message.hpp"
+// #include "format.hpp"
+// #include"sink.hpp"
+// #include <iostream>
+// #include "logger.hpp"
+// int main()
+// {
+//     // 创建输出目标：输出到标准输出(控制台)
+//     std::vector<mylog::LogSink::ptr> sinks;
+//     sinks.push_back(mylog::SinkFactory::create<mylog::StdoutSink>());
+    
+//     mylog::Logger::ptr logger=std::make_shared<mylog::SyncLogger>("root",mylog::LogLevel::value::DEBUG,mylog::Formatter::ptr(new mylog::Formatter()),sinks);
+//     logger->debug("main.cc",30,"功能测试");
+//     logger->info("main.cc",30,"功能测试");
+//     logger->warn("main.cc",30,"功能测试");
+//     logger->error("main.cc",30,"功能测试");
+//     logger->fatal("main.cc",30,"功能测试");
+//     return 0;
+// }
