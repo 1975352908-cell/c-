@@ -11,7 +11,6 @@
 #define __M_MESG_H__
 #include"level.hpp"
 #include"util.hpp"
-#include<iostream>
 #include<stdio.h>
 #include<string>
 #include<thread>

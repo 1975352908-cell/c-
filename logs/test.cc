@@ -91,3 +91,69 @@
 //     logger->fatal("main.cc",30,"功能测试");
 //     return 0;
 // }
+
+
+#include <iostream>
+#include "logger.hpp"
+#include"buffer.hpp"
+#include"looper.hpp"
+void Test_logger()
+{
+    std::unique_ptr<mylog::LoggerBuilder> builder=std::make_unique<mylog::LocalLoggerBuilder>();
+    builder->buildLoggerName("root");
+    mylog::Logger::ptr logger=builder->build();
+    logger->debug("main.cc",30,"功能测试");
+}
+void Test_buffer()
+{
+    //读入文件数据，一点一点写入缓冲区，最终将缓冲区数据写入文件，保证写入文件的正确性;
+    std::ifstream ifs("/root/work-wjk/logs/test.txt",std::ios::binary);
+    if(ifs.is_open()==false)
+    {
+        std::cout<<"文件打开失败"<<std::endl;
+        return;
+    }
+    ifs.seekg(0,std::ios::end);
+    size_t file_size=ifs.tellg();
+    ifs.seekg(0,std::ios::beg);
+    std::string body;
+    body.resize(file_size);
+    ifs.read(&body[0],file_size);
+    if(ifs.good()==false)
+    {
+        std::cout<<"文件读取失败"<<std::endl;
+        return;
+    }
+    ifs.close();
+
+    mylog::Buffer buffer;
+    for(size_t i=0;i<body.size();i++)
+    {
+        buffer.push(&body[i],1);
+    }
+    std::ofstream ofs("/root/work-wjk/logs/test.txt.bak");
+    //ofs.write(buffer.begin(),buffer.readAbleSize());
+    size_t sz=buffer.readAbleSize();
+    for(size_t i=0;i<sz;i++)
+    {
+        ofs.write(buffer.begin(),1);
+        buffer.moveReader(1);
+    }
+    ofs.close();
+}
+void Test_looper()
+{
+    mylog::AsyncLooper::ptr looper=std::make_shared<mylog::AsyncLooper>();
+    looper->push("hello",5);
+    looper->push("world",5);
+    looper->push("hello",5);
+    looper->push("world",5);
+    looper->stop();
+}
+int main()
+{
+    //Test_logger();
+    //Test_buffer();
+    Test_looper();
+    return 0;
+}

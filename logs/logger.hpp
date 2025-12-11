@@ -4,7 +4,6 @@
 */
 #ifndef __M_LOGGER_H__
 #define __M_LOGGER_H__
-#include"util.hpp"
 #include "level.hpp"
 #include "message.hpp"
 #include "format.hpp"
@@ -160,18 +159,78 @@ namespace mylog
          }  
        }
     };
+    enum class LoggerType
+    {
+        LOGGER_SYNC, //同步日志器
+        LOGGER_ASYNC //异步日志器
+    };
+    /*
+    建造者模式：不让用户去构建日志器对象，而是通过建造者模式来构建日志器对象;
+  */ 
+   // 1.抽象一个日志建造这类(完成日志器对象零件的构建&日志器的构建)
+    //设置日志器类型，将不同的日志器放到同一个builder中建造;
+    class LoggerBuilder
+    {
+     public:
+         void buildLoggerType(LoggerType type)
+         {
+            _logger_type=type;
+         }
+         void buildLoggerName(const std::string& name)
+         {
+            _logger_name=name;
+         }
+         void buildLoggerLevel(LogLevel::value level)
+         {
+            _level=level;
+         }
+         void buildFormatter(const std::string& pattern)
+         {
+            _formatter=std::make_shared<Formatter>(pattern);
+         }
+         template<class SinkType,class ...Args>
+         void buildSink(Args&& ...args)
+         {
+            LogSink::ptr psink=SinkFactory::create<SinkType>(std::forward<Args>(args)...);
+            _sinks.push_back(psink);
+         }
+         virtual Logger::ptr build()=0;
+     protected:
+         LoggerType _logger_type;
+         std::string _logger_name;
+         LogLevel::value _level;
+         Formatter::ptr _formatter;
+         std::vector<LogSink::ptr> _sinks;
+    };
+    //2.派生出具体的建造者类：局部日志器的建造者和全局日志器的建造者;
+    class LocalLoggerBuilder : public LoggerBuilder
+    {
+     public:
+         Logger::ptr build() override
+         {
+            if(_logger_name.empty())
+            {
+               throw std::runtime_error("logger name is empty");
+            }
+            if(_formatter==nullptr)
+            {
+                _formatter=std::make_shared<Formatter>();
+            }
+            if(_sinks.empty())
+            {
+               buildSink<StdoutSink>(); //默认输出到标准输出;  
+            }
+            //异步日志器;
+            if(_logger_type==LoggerType::LOGGER_ASYNC)
+            {
+               //... 
+            }
+            //同步日志器;
+            return std::make_shared<SyncLogger>(_logger_name,_level,_formatter,_sinks);
+         }
+    };
+
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 

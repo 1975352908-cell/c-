@@ -1,96 +1,75 @@
-#include<iostream>
-#include<mysql.h>
+#include <iostream>
+#include <mysql/mysql.h>
+
 int main()
 {
-    MYSQL* coon=mysql_init(nullptr);
-    if(coon==nullptr)
+    // 初始化连接句柄
+    MYSQL* conn = mysql_init(nullptr);
+    if (conn == nullptr)
     {
-        std::cout<<"mysql_init failed"<<std::endl;
+        std::cout << "mysql_init failed" << std::endl;
         return -1;
     }
-    char*host="localhost";
-    char*user="root";
-    char*password="111111";
-    char*db="test";
-    unsigned int port=3306;
-    if(mysql_real_connect(coon,host,user,password,db,port,nullptr,0))
-    {
-        std::cout<<"mysql_real_connect failed"<<std::endl;
-        return -1;
-    }
-    std::cout<<"mysql_real_connect success"<<std::endl;
 
-    mysql_close(coon);
-    return 0;
-}
-// #include<iostream>
-// #include<mysql.h>
-// int main()
-// {
-//     MYSQL* coon=mysql_init(nullptr);
-//     if(coon==nullptr)
-//     {
-//         std::cout<<"mysql_init failed"<<std::endl;
-//         return -1;
-//     }
-//     char*host="localhost";
-//     char*user="root";
-//     char*password="111111";
-//     char*db="test";
-//     unsigned int port=3306;
-//     if(mysql_real_connect(coon,host,user,password,db,port,nullptr,0))
-//     {
-//         std::cout<<"mysql_real_connect failed"<<std::endl;
-//         return -1;
-//     }
-//     std::cout<<"mysql_real_connect success"<<std::endl;
-
-//     mysql_close(coon);
-//     return 0;
-// }
-
-#include<iostream>
-#include<mysql.h>
-int main()
-{
-    MYSQL*coon=mysql_init(nullptr);
-    if(coon==nullptr)
-    {
-        std::cout<<"mysql_init failed"<<std::endl;
-        return -1;
-    }
-    //连接数据库;
-    if(!mysql_real_connect(coon,"localhost","root","111111","test",3306,nullptr,0))
+    // 连接数据库（根据你的实际账号信息修改）
+    if (!mysql_real_connect(conn,
+                            "localhost",
+                            "root",
+                            "111111",
+                            "test",
+                            3306,
+                            nullptr,
+                            0))
     {
         std::cout << "mysql_real_connect failed: "
-        << mysql_error(coon) << std::endl;
+                  << mysql_error(conn) << std::endl;
+        mysql_close(conn);
         return -1;
     }
-    // 执行sql语句;
-    const char*sql="select *from users where id=4";
-    int flag=mysql_query(coon,sql);
-    if(flag!=0)
+
+    // 执行 SQL 语句
+    const char* sql = "select * from users where id = 4";
+    int rc = mysql_query(conn, sql);
+    if (rc != 0)
     {
-        std::cout<<"mysql_query failed"<<std::endl;
+        std::cout << "mysql_query failed: "
+                  << mysql_error(conn) << std::endl;
+        mysql_close(conn);
         return -1;
     }
-    //从服务器到客户端，获取结果集;
-    MYSQL_RES*res=mysql_store_result(coon);
-    if(res==nullptr)
+
+    // 获取结果集
+    MYSQL_RES* res = mysql_store_result(conn);
+    if (res == nullptr)
     {
-        std::cout<<"mysql_store_result failed"<<mysql_error(coon)<<std::endl;
+        std::cout << "mysql_store_result failed: "
+                  << mysql_error(conn) << std::endl;
+        mysql_close(conn);
         return -1;
     }
-    //获取结果
-    MYSQL_ROW row=mysql_fetch_row(res);
-    if(res==nullptr)
+
+    // 取一行结果（仅示例）
+    MYSQL_ROW row = mysql_fetch_row(res);
+    if (row == nullptr)
     {
-        std::cout<<"mysql_fetch_row failed"<<mysql_error(coon)<<std::endl;
+        std::cout << "mysql_fetch_row failed or no data: "
+                  << mysql_error(conn) << std::endl;
+        mysql_free_result(res);
+        mysql_close(conn);
         return -1;
     }
+
+    // 简单打印第一列（如果有）
+    if (row[0] != nullptr)
+    {
+        std::cout << "first column: " << row[0] << std::endl;
+    }
+
+    // 释放资源并关闭连接
+    mysql_free_result(res);
+    mysql_close(conn);
+
     return 0;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 86e72353f7898e3b0d0b72984686710854dc186b
+
+
