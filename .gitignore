@@ -39,3 +39,7 @@
 
 # debug information files
 *.dwo
+
+# Generated log files (never commit)
+*.log
+log_test/
