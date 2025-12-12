@@ -6,7 +6,6 @@
 
 #include"buffer.hpp"
 #include"sink.hpp"
-#include"logger.hpp"
 #include<thread>
 #include<mutex>
 #include<condition_variable>
@@ -27,10 +26,10 @@ namespace mylog
     {
     public:
         using ptr=std::shared_ptr<AsyncLooper>;
-        AsyncLooper(const Functor&cb)   
-        :_stop(false)
-        ,_callback(cb)
-        ,loopper_type(AsyncType::ASYNC_SAFE)
+       AsyncLooper(const Functor&cb, AsyncType type = AsyncType::ASYNC_SAFE)   
+       :_stop(false)
+       ,_callback(cb)
+       ,loopper_type(type)
         {
             _thread=std::thread(&AsyncLooper::threadEntry,this);
         }
@@ -59,12 +58,17 @@ namespace mylog
     private:
         void threadEntry()
         {
-            while(!_stop)
+            while(1)
             {
               { 
                 //1.判断生产者缓冲区是否为空，有数据则交换，没数据则阻塞；
                 std::unique_lock<std::mutex> lock(_mutex);
                 _con_cond.wait(lock,[this]{return _stop || !_pro_buffer.empty();});
+                //如果停止标志为真，并且生产者缓冲区为空，则退出线程,保证缓冲区数据被消费完;
+                if(_stop&& _pro_buffer.empty())
+                {
+                    return;
+                }
                 _con_buffer.swap(_pro_buffer);
                 //2.唤醒生产者；
                 if(loopper_type==AsyncType::ASYNC_SAFE)
@@ -90,15 +94,4 @@ namespace mylog
         std::condition_variable _con_cond; //消费者条件变量;
     };
 }
-
-
-
-
-
-
-
-
-
-
-
 #endif

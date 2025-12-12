@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug bench (LLDB)",
+        "type": "lldb",
+        "request": "launch",
+        "program": "${workspaceFolder}/bench/bench",
+        "args": [],
+        "cwd": "${workspaceFolder}/bench",
+        "stopOnEntry": false
+      }
+    ]
+  }
+  

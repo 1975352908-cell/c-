@@ -2,6 +2,7 @@
 #define __M_BUFFER_H__
 #include<vector>
 #include<cassert>
+#include<cstdio>
 #define DEFAULT_BUFFER_SIZE (1*1024*1024)
 #define THRESHOLD_SIZE (8*1024*1024)
 #define INCREMENT_SIZE (1*1024*1024)
