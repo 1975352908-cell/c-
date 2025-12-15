@@ -204,7 +204,7 @@ int main()
     // builder->buildSink<mylog::StdoutSink>();
     // builder->buildSink<mylog::FileSink>("./logs/async_logger.log");
     // mylog::Logger::ptr logger=builder->build();
-    DEBUG("main.cc",30,"功能测试");
+    //DEBUG("main.cc",30,"功能测试");
     //test_log();
     return 0;
 }
