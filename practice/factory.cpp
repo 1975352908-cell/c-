@@ -235,6 +235,10 @@ using namespace std;
 // }
 
 
+
+#include<memory>
+#include<string>
+using namespace std;
 //代理模式;
 class RentHouse
 {
@@ -264,9 +268,71 @@ private:
    Landlord _landlordd;
 };
 
+// int main()
+// {
+//     Intermediary inter;
+//     inter.renthouse();
+//     return 0;
+// }
+
+
+
+
+
+
+class Fruit
+{
+public:
+    Fruit(){};
+    virtual void name()=0;
+};
+
+class Apple :public Fruit
+{
+public:
+    Apple(){};
+    void name()
+    {
+        cout<<"苹果"<<endl;
+    }
+};
+class Banana :public Fruit
+{
+public:
+    Banana(){};
+    void name()
+    {
+        cout<<"香蕉"<<endl;
+    }
+};
+
+class FruitFactory
+{
+public:
+    virtual shared_ptr<Fruit> createFruit(const string& name)=0;
+};
+class AppleFactory :public FruitFactory
+{
+public:
+    shared_ptr<Fruit> createFruit(const string& name)
+    {
+        return make_shared<Apple>();
+    }
+};
+class BananaFactory :public FruitFactory
+{
+public:
+    shared_ptr<Fruit> createFruit(const string& name)
+    {
+        return make_shared<Banana>();
+    }
+};
 int main()
 {
-    Intermediary inter;
-    inter.renthouse();
-    return 0;
+   shared_ptr<FruitFactory> ptr=make_shared<AppleFactory>();
+   shared_ptr<Fruit> fruit=ptr->createFruit("苹果");
+   fruit->name();
+   ptr.reset();
+   fruit.reset();
+   return 0;
 }
