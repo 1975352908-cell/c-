@@ -3,9 +3,9 @@
 #include<vector>
 #include<cassert>
 #include<cstdio>
-#define DEFAULT_BUFFER_SIZE (1*1024*1024)
-#define THRESHOLD_SIZE (8*1024*1024)
-#define INCREMENT_SIZE (1*1024*1024)
+#define DEFAULT_BUFFER_SIZE (1*1024*1024) //默认缓冲区大小为1MB
+#define THRESHOLD_SIZE (8*1024*1024) //阈值大小为8MB
+#define INCREMENT_SIZE (1*1024*1024) //增量大小为1MB
 namespace mylog
 {
     class Buffer

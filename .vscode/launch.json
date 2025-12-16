@@ -5,11 +5,10 @@
         "name": "Debug bench (LLDB)",
         "type": "lldb",
         "request": "launch",
-        "program": "${workspaceFolder}/bench/bench",
+        "program": "${workspaceFolder}/example/test",
         "args": [],
-        "cwd": "${workspaceFolder}/bench",
+        "cwd": "${workspaceFolder}/example",
         "stopOnEntry": false
       }
     ]
   }
-  

@@ -51,15 +51,20 @@ namespace mylog
            {
               return;   
            }
+           //格式化日志消息;
            va_list ap;
+           //将可变参数列表转换为字符串;
            va_start(ap,fmt);
            char*res;
+           //将可变参数列表转换为字符串,就是要输出的日志内容;
            int ret=vasprintf(&res,fmt.c_str(),ap);
            if(ret==-1)
            {
              std::cout<<"vasprintf failed"<<std::endl;
            }
+           //释放资源;
            va_end(ap);
+           //序列化日志消息;
            serialize(LogLevel::value::DEBUG,file,line,res);
            //释放资源;
            free(res);
@@ -252,7 +257,7 @@ namespace mylog
     class LocalLoggerBuilder : public LoggerBuilder
     {
      public:
-         Logger::ptr build() override
+         virtual Logger::ptr build() override
          {
             if(_logger_name.empty())
             {
@@ -329,7 +334,8 @@ namespace mylog
          Logger::ptr _root_Logger; //默认日志器
          std::unordered_map<std::string,Logger::ptr> _loggers;
     };
-
+    
+    //全局日志建造者类，用于建造全局日志器;
     class GlobalLoggerBuilder : public LoggerBuilder
     {
       public:
@@ -364,8 +370,6 @@ namespace mylog
     };
 
 }   
-
-
 
 #endif
 

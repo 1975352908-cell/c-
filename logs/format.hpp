@@ -181,7 +181,7 @@ namespace mylog
         bool parsePattern()
         {
            // [%d{%H:%M:%S}][%t][%p][%c][%f:%l] %m%n
-            std::vector<std::pair<std::string, std::string>> fmt_order;
+            std::vector<std::pair<std::string, std::string>> fmt_order;//存储格式化项,第一个是占位符,第二个是子格式;
             std::string literal;  // 普通字符串
             size_t pos = 0;
 
@@ -219,7 +219,7 @@ namespace mylog
                 }
 
                 // 取占位符 key（比如 d / t / p / m 等）
-                std::string key;
+                std::string key;//占位符;
                 key.push_back(_pattern[pos]);
                 ++pos;
 

@@ -20,7 +20,7 @@ namespace mylog
     enum class AsyncType
     {
         ASYNC_SAFE,   //安全模式，表示缓冲区满了则阻塞，防止资源耗尽；
-        ASYNC_UNSAFE, //不安全模式，不考虑资源耗尽，无线扩容，常用语测试；
+        ASYNC_UNSAFE, //不安全模式，不考虑资源耗尽，无线扩容，常用于测试；
     };
     class AsyncLooper
     {
