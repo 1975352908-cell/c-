@@ -16,6 +16,9 @@
 #include <fstream> 
 #include <string>   
 #include "level.hpp"
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
 namespace mylog
 {
     
@@ -77,8 +80,8 @@ namespace mylog
     {
     public:
         using ptr=std::shared_ptr<StdoutSink>;
-        StdoutSink()
-        :_enable_color(true)
+        StdoutSink(bool enable_color=true)
+        :_enable_color(enable_color)
         {}
         virtual void log(const char*data,size_t len)
         {   
@@ -194,6 +197,24 @@ private:
         size_t _cur_size;
         std::string _basename;
         std::ofstream _ofs;
+    };
+    class UdpSink : public LogSink
+    {
+    public:
+        using ptr=std::shared_ptr<UdpSink>;
+        UdpSink(int port,std::string ip)
+        :_port(port),_ip(ip)
+        {
+        }
+        virtual void log(const char*data,size_t len)
+        {
+        }
+    private:
+        int _port;
+        std::string _ip;
+        int _sockfd;
+        struct sockaddr_in _servaddr;
+        socklen_t _servaddr_len=sizeof(_servaddr);
     };
     class SinkFactory
     {

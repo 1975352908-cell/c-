@@ -98,98 +98,157 @@
 // #include "buffer.hpp"
 // #include "looper.hpp"
 // #include "sink.hpp"
-void Test_logger()
-{
-    std::unique_ptr<mylog::LoggerBuilder> builder=std::make_unique<mylog::LocalLoggerBuilder>();
-    builder->buildLoggerName("root");
-    mylog::Logger::ptr logger=builder->build();
-    logger->debug("main.cc",30,"功能测试");
-}
-void Test_buffer()
-{
-    //读入文件数据，一点一点写入缓冲区，最终将缓冲区数据写入文件，保证写入文件的正确性;
-    std::ifstream ifs("/root/work-wjk/logs/test.txt",std::ios::binary);
-    if(ifs.is_open()==false)
-    {
-        std::cout<<"文件打开失败"<<std::endl;
-        return;
-    }
-    ifs.seekg(0,std::ios::end);
-    size_t file_size=ifs.tellg();
-    ifs.seekg(0,std::ios::beg);
-    std::string body;
-    body.resize(file_size);
-    ifs.read(&body[0],file_size);
-    if(ifs.good()==false)
-    {
-        std::cout<<"文件读取失败"<<std::endl;
-        return;
-    }
-    ifs.close();
+// void Test_logger()
+// {
+//     std::unique_ptr<mylog::LoggerBuilder> builder=std::make_unique<mylog::LocalLoggerBuilder>();
+//     builder->buildLoggerName("root");
+//     mylog::Logger::ptr logger=builder->build();
+//     logger->debug("main.cc",30,"功能测试");
+// }
+// void Test_buffer()
+// {
+//     //读入文件数据，一点一点写入缓冲区，最终将缓冲区数据写入文件，保证写入文件的正确性;
+//     std::ifstream ifs("/root/work-wjk/logs/test.txt",std::ios::binary);
+//     if(ifs.is_open()==false)
+//     {
+//         std::cout<<"文件打开失败"<<std::endl;
+//         return;
+//     }
+//     ifs.seekg(0,std::ios::end);
+//     size_t file_size=ifs.tellg();
+//     ifs.seekg(0,std::ios::beg);
+//     std::string body;
+//     body.resize(file_size);
+//     ifs.read(&body[0],file_size);
+//     if(ifs.good()==false)
+//     {
+//         std::cout<<"文件读取失败"<<std::endl;
+//         return;
+//     }
+//     ifs.close();
 
-    mylog::Buffer buffer;
-    for(size_t i=0;i<body.size();i++)
-    {
-        buffer.push(&body[i],1);
-    }
-    std::ofstream ofs("/root/work-wjk/logs/test.txt.bak");
-    //ofs.write(buffer.begin(),buffer.readAbleSize());
-    size_t sz=buffer.readAbleSize();
-    for(size_t i=0;i<sz;i++)
-    {
-        ofs.write(buffer.begin(),1);
-        buffer.moveReader(1);
-    }
-    ofs.close();
-}
-void Test_looper()
-{
-    // mylog::AsyncLooper::ptr looper=std::make_shared<mylog::AsyncLooper>();
-    // looper->push("hello",5);
-    // looper->push("world",5);
-    // looper->push("hello",5);
-    // looper->push("world",5);
-    // looper->stop();
-}
-void Test_AsyncLogger()
-{
-    // std::unique_ptr<mylog::LoggerBuilder> builder(new mylog::LocalLoggerBuilder());
-    // builder->buildLoggerName("async_logger");
-    // builder->buildFormatter("%m%n");
-    // builder->buildSink<mylog::StdoutSink>();
-    // builder->buildLoggerType(mylog::LoggerType::LOGGER_ASYNC);  // 关键：设置为异步日志器
-    // builder->buildEnableUnsafeAsync();  // 可选：启用不安全模式
-    // mylog::Logger::ptr logger = builder->build();
+//     mylog::Buffer buffer;
+//     for(size_t i=0;i<body.size();i++)
+//     {
+//         buffer.push(&body[i],1);
+//     }
+//     std::ofstream ofs("/root/work-wjk/logs/test.txt.bak");
+//     //ofs.write(buffer.begin(),buffer.readAbleSize());
+//     size_t sz=buffer.readAbleSize();
+//     for(size_t i=0;i<sz;i++)
+//     {
+//         ofs.write(buffer.begin(),1);
+//         buffer.moveReader(1);
+//     }
+//     ofs.close();
+// }
+// void Test_looper()
+// {
+//     // mylog::AsyncLooper::ptr looper=std::make_shared<mylog::AsyncLooper>();
+//     // looper->push("hello",5);
+//     // looper->push("world",5);
+//     // looper->push("hello",5);
+//     // looper->push("world",5);
+//     // looper->stop();
+// }
+// void Test_AsyncLogger()
+// {
+//     // std::unique_ptr<mylog::LoggerBuilder> builder(new mylog::LocalLoggerBuilder());
+//     // builder->buildLoggerName("async_logger");
+//     // builder->buildFormatter("%m%n");
+//     // builder->buildSink<mylog::StdoutSink>();
+//     // builder->buildLoggerType(mylog::LoggerType::LOGGER_ASYNC);  // 关键：设置为异步日志器
+//     // builder->buildEnableUnsafeAsync();  // 可选：启用不安全模式
+//     // mylog::Logger::ptr logger = builder->build();
     
-    // logger->debug("main.cc", 30, "异步日志测试");
+//     // logger->debug("main.cc", 30, "异步日志测试");
     
-    // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    // std::cout << "Test_AsyncLogger 完成" << std::endl;
+//     // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//     // std::cout << "Test_AsyncLogger 完成" << std::endl;
 
-    std::unique_ptr<mylog::LoggerBuilder> builder=std::make_unique<mylog::LocalLoggerBuilder>();
-    builder->buildLoggerName("async_logger");
-    builder->buildFormatter("[%c]%m%n");
-    builder->buildLoggerType(mylog::LoggerType::LOGGER_ASYNC);
-    builder->buildLoggerLevel(mylog::LogLevel::value::WORN);
-    builder->buildSink<mylog::StdoutSink>();
-    builder->buildSink<mylog::FileSink>("./logs/async_logger.log");
-    mylog::Logger::ptr logger=builder->build();
-    int count=10000;
-    for(int i=0;i<count;i++)
-    {
-        logger->fatal("async_logger.cc",20,"异步日志测试%d",i);
-    }
-}
+//     std::unique_ptr<mylog::LoggerBuilder> builder=std::make_unique<mylog::LocalLoggerBuilder>();
+//     builder->buildLoggerName("async_logger");
+//     builder->buildFormatter("[%c]%m%n");
+//     builder->buildLoggerType(mylog::LoggerType::LOGGER_ASYNC);
+//     builder->buildLoggerLevel(mylog::LogLevel::value::WORN);
+//     builder->buildSink<mylog::StdoutSink>();
+//     builder->buildSink<mylog::FileSink>("./logs/async_logger.log");
+//     mylog::Logger::ptr logger=builder->build();
+//     int count=10000;
+//     for(int i=0;i<count;i++)
+//     {
+//         logger->fatal("async_logger.cc",20,"异步日志测试%d",i);
+//     }
+// }
 
-void test_log()
+// void test_log()
+// {
+//     mylog::Logger::ptr logger=mylog::LoggerManager::getInstance().getLogger("async_logger");
+//     int count=10000;
+//     for(int i=0;i<count;i++)
+//     {
+//         logger->fatal("async_logger.cc",20,"异步日志测试%d",i);
+//     }
+// }
+
+
+// ==================== 测试2: 控制台颜色输出 ====================
+void test_colored_stdout()
 {
-    mylog::Logger::ptr logger=mylog::LoggerManager::getInstance().getLogger("async_logger");
-    int count=10000;
-    for(int i=0;i<count;i++)
-    {
-        logger->fatal("async_logger.cc",20,"异步日志测试%d",i);
-    }
+    std::cout << "\n========== 测试2: 控制台颜色输出 ==========\n";
+
+    // 创建带颜色的 stdout sink
+    mylog::LocalLoggerBuilder builder;
+    builder.buildLoggerName("color_logger");
+    builder.buildLoggerLevel(mylog::LogLevel::value::DEBUG);
+    auto logger = builder.build();
+
+    logger->debug("DEBUG - 青色 (Cyan)");
+    logger->info("INFO - 绿色 (Green)");
+    logger->warn("WARN - 黄色 (Yellow)");
+    logger->error("ERROR - 红色 (Red)");
+    logger->fatal("FATAL - 品红色 (Magenta)");
+
+    std::cout << "✅ 颜色输出测试完成\n";
 }
+//====================测试9: 日志等级过滤 ====================
+void test_level_filter()
+{
+    std::cout << "\n========== 测试9: 日志等级过滤 ==========\n";
+
+    mylog::LocalLoggerBuilder builder;
+    builder.buildLoggerName("level_filter_logger");
+    builder.buildLoggerLevel(mylog::LogLevel::value::WORN);  // 只输出 WARN 及以上
+    builder.buildSink<mylog::StdoutSink>(true);
+    auto logger = builder.build();
+
+    std::cout << "设置最低等级为 WARN,以下应只显示 WARN/ERROR/FATAL:\n";
+    logger->debug("DEBUG - 不应显示");
+    logger->info("INFO - 不应显示");
+    logger->warn("WARN - 应该显示");
+    logger->error("ERROR - 应该显示");
+    logger->fatal("FATAL - 应该显示");
+
+    std::cout << "✅ 日志等级过滤测试完成\n";
+}
+//====================测试10: 多 Sink 输出 ====================
+void test_multi_sink()
+{
+    std::cout << "\n========== 测试10: 多 Sink 输出 ==========\n";
+
+    mylog::LocalLoggerBuilder builder;
+    builder.buildLoggerName("multi_sink_logger");
+    builder.buildLoggerLevel(mylog::LogLevel::value::DEBUG);
+    builder.buildSink<mylog::StdoutSink>(true);                          // 控制台
+    builder.buildSink<mylog::FileSink>("./test_logs/multi_sink.log");    // 文件
+    auto logger = builder.build();
+
+    logger->info("这条日志同时输出到控制台和文件");
+    logger->error("错误日志也同时输出到两处");
+
+    std::cout << "✅ 多 Sink 输出测试完成\n";
+}
+
 int main()
 {
     //Test_logger();
@@ -204,7 +263,16 @@ int main()
     // builder->buildSink<mylog::StdoutSink>();
     // builder->buildSink<mylog::FileSink>("./logs/async_logger.log");
     // mylog::Logger::ptr logger=builder->build();
-    DEBUG("功能测试,[INFO],[DEBUG] ,[WORN],[ERROR],[FATAL]");
+
+
+
+
+
+
+    
+    test_colored_stdout();
+    test_level_filter();
+    test_multi_sink();
     //test_log();
     return 0;
 }
