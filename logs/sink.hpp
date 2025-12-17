@@ -11,28 +11,98 @@
 #include<iostream>
 #include<memory>
 #include<mutex>
+#include<map>
+#include<cstring>
 #include <fstream> 
 #include <string>   
+#include "level.hpp"
 namespace mylog
 {
-    class LogSink
+    
+    namespace color
+    {
+        // static std::map<std::string_view,LogLevel::value> color_map=
+        // {
+        //     {"\033[31m",LogLevel::value::FATAL},//红色
+        //     {"\033[32m",LogLevel::value::ERROR},//绿色
+        //     {"\033[33m",LogLevel::value::WORN},//黄色
+        //     {"\033[34m",LogLevel::value::INFO},//蓝色
+        //     {"\033[35m",LogLevel::value::DEBUG},//洋红色
+        // case LogLevel::value::FATAL: return "\033[31m";     // 红
+        // case LogLevel::value::ERROR: return "\033[31m";     // 红
+        // case LogLevel::value::WORN:  return "\033[33m";     // 黄
+        // case LogLevel::value::INFO:  return "\033[34m";     // 蓝
+        // case LogLevel::value::DEBUG: return "\033[35m";     // 紫
+        // };
+        static const char* getColor(std::string_view view)
+        {
+            size_t sp = view.find(' '); // header 和 message 通常用空格分隔
+            std::string_view header = (sp == std::string_view::npos) ? view : view.substr(0, sp);
+            if(header.find("[FATAL]")!=std::string_view::npos)
+            {
+                return "\033[31m";
+            }
+            if(header.find("[ERROR]")!=std::string_view::npos)
+            {
+                return "\033[31m";
+            }
+            if(header.find("[WORN]")!=std::string_view::npos)
+            {
+                return "\033[33m";
+            }
+            if(header.find("[INFO]")!=std::string_view::npos)
+            {
+                return "\033[34m";
+            }
+            if(header.find("[DEBUG]")!=std::string_view::npos)
+            {
+                return "\033[32m";
+            }
+            return nullptr;
+        }
+
+        static const char* color_end="\033[0m";//颜色复位;
+
+    }
+    class LogSink   
     {
     public:
         using ptr=std::shared_ptr<LogSink>;
         virtual void log(const char*data,size_t len)=0;
         virtual ~ LogSink() {};
     };
-
+   
     //1.将日志写入标准输出;
     class StdoutSink : public LogSink
     {
     public:
         using ptr=std::shared_ptr<StdoutSink>;
-        StdoutSink()=default;
+        StdoutSink()
+        :_enable_color(true)
+        {}
         virtual void log(const char*data,size_t len)
         {   
-            std::cout.write(data,len);
+            if(_enable_color==false)
+            {
+                std::cout.write(data,len);
+                return;
+            }
+            //日志要求输出颜色;
+            std::string view(data,len);
+            const char*pcolor=color::getColor(view);
+            if(pcolor!=nullptr)
+            {
+                std::cout<<pcolor;
+                std::cout.write(data,len);
+                std::cout<<color::color_end;
+            }
+            else
+            {
+                std::cout.write(data,len);
+            }
         }
+    private:
+        bool _enable_color;
     };
 
     //2.将日志写入指定文件;
@@ -134,5 +204,6 @@ private:
           return std::make_shared<SinkType>(std::forward<Args>(args)...);
        }
     };
+    
 }
 #endif
