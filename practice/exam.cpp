@@ -1,5 +1,4 @@
 // 这是学习不定参宏函数的用例;
-#include<stdio.h>
 #include<iostream>
 #include<stdarg.h>
 #define LOG(fmt,...) printf("[%s:%d]" fmt "\n",__FILE__,__LINE__, ##__VA_ARGS__)

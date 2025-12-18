@@ -19,6 +19,10 @@
 #include<sys/socket.h>
 #include<netinet/in.h>
 #include<arpa/inet.h>
+#include<sys/uio.h>
+#include<unistd.h>
+#include<sys/types.h>
+#include<sys/socket.h>
 namespace mylog
 {
     
@@ -200,21 +204,168 @@ private:
     };
     class UdpSink : public LogSink
     {
+    private:
+        int _fd={-1};//相当于文件描述符;
+        struct sockaddr_in _addr;
+        int _port;
+        std::string _host;
     public:
         using ptr=std::shared_ptr<UdpSink>;
-        UdpSink(int port,std::string ip)
-        :_port(port),_ip(ip)
+        UdpSink(int port,std::string host)
+        :_port(port),_host(host)
         {
+            _fd=socket(AF_INET,SOCK_DGRAM,0);
+            if(_fd<0)
+            {
+                perror("socket error");
+                return;
+            }
+            memset(&_addr,0,sizeof(_addr));
+            _addr.sin_family=AF_INET;
+            _addr.sin_port=htons(_port);
+            _addr.sin_addr.s_addr=inet_addr(_host.c_str());
+        }
+        ~UdpSink()
+        {
+            if(_fd>=0)
+            {
+                close(_fd);
+            }
         }
         virtual void log(const char*data,size_t len)
         {
+            if(_fd<0)
+            {
+                throw std::runtime_error("socket error");
+            }
+            //判断是否要换行;
+            bool need_newline;
+            if(len==0 || data[len-1]!='\n')
+            {
+                need_newline=true;
+            }
+            else
+            {
+                need_newline=false;
+            }
+
+
+            // 分散读写;struct iovec 类似与c++17的string_view
+            struct iovec iov[2];
+            //数据;
+            iov[0].iov_base=const_cast<char*>(data);                   //                  struct iovec
+            iov[0].iov_len=len;                                        //                   {     void *iov_base;	/* Pointer to data.  */          size_t iov_len;	/* Length of data.  */ }
+            //换行;                                                     //  
+            char newline='\n';                                          //
+            iov[1].iov_base=&newline;                                   //
+            iov[1].iov_len=(need_newline?1:0);                          //
+            /*
+            struct msghdr
+            {
+                void *msg_name;    //目标地址;
+                socklen_t msg_namelen; //目标地址长度;
+                struct iovec *msg_iov; //分散读写;
+                size_t msg_iovlen; //分散读写长度;
+                void *msg_control; //控制信息;
+                size_t msg_controllen; //控制信息长度;
+            };
+            */
+            struct msghdr msg;
+            msg.msg_name=&_addr;
+            msg.msg_namelen=sizeof(_addr);
+            msg.msg_iov=iov;
+            msg.msg_iovlen = need_newline ? 2 : 1;//分散读写长度
+            msg.msg_control=nullptr;
+            (void)sendmsg(_fd,&msg,0);//忽略返回值;
         }
+    };
+
+    //tcp客户端;
+    class TcpSink : public LogSink
+    {
     private:
+        int _fd{-1};
         int _port;
-        std::string _ip;
-        int _sockfd;
-        struct sockaddr_in _servaddr;
-        socklen_t _servaddr_len=sizeof(_servaddr);
+        std::string _host;
+    private:
+        bool connectServer()
+        {
+            //关闭旧连接;
+            if(_fd>=0)
+            {
+                close(_fd);
+            }
+            //创建新连接;
+            _fd=socket(AF_INET,SOCK_STREAM,0);
+
+            if(_fd<0)
+            {
+                return false;
+            }
+            struct sockaddr_in addr;
+            std::memset(&addr,0,sizeof(addr));
+            addr.sin_family=AF_INET;
+            addr.sin_port=htons(_port);
+            addr.sin_addr.s_addr=inet_addr(_host.c_str());
+            if (::inet_pton(AF_INET, _host.c_str(), &addr.sin_addr) <= 0)//将主机地址转换为网络地址
+            {
+                ::close(_fd);
+                _fd = -1;//关闭套接字
+                return false;
+            }
+            //连接服务端;
+            if(::connect(_fd,(struct sockaddr*)&addr,sizeof(addr))<0)
+            {
+                close(_fd); 
+                _fd=-1;
+                return false;
+            }
+            return true;
+        }
+    public:
+        using ptr=std::shared_ptr<TcpSink>;
+        TcpSink(int port,std::string host)
+        :_port(port),_host(host)
+        {
+            connectServer();
+        }
+        ~TcpSink()
+        {
+            if(_fd>=0)
+            {
+                close(_fd);
+            }
+        }
+        virtual void log(const char*data,size_t len)
+        {
+            if(_fd<0 || connectServer()==false)
+            {
+                return;
+            }
+            //连接成功,开始写入;
+            bool need_newline;
+            if(len==0 || data[len-1]!='\n')
+            {
+                need_newline=true;
+            }
+            else
+            {
+                need_newline=false;         
+            }
+            std::string payload(data,len);
+            if(need_newline)
+            {
+                payload+='\n';
+            }
+            ssize_t n = ::send(_fd, payload.data(), payload.size(), MSG_NOSIGNAL);
+            if (n < 0)
+            {
+                if (connectServer())
+                {
+                    (void)::send(_fd, payload.data(), payload.size(), MSG_NOSIGNAL);
+                }
+            }
+        }
     };
     class SinkFactory
     {

@@ -1,4 +1,9 @@
 #include"../logs/mylog.h"
+#include"../logs/log_server.hpp"
+#include"../logs/sink.hpp"
+#include <thread>
+#include <chrono>
+#include <atomic>
 //util.cpp单元测试;
 //#include"util.hpp"
 // int main()
@@ -249,6 +254,168 @@ void test_multi_sink()
     std::cout << "✅ 多 Sink 输出测试完成\n";
 }
 
+//====================测试11: TCP/UDP Sink 基本功能测试 ====================
+void test_tcp_udp_logging()
+{
+    std::cout << "\n========== 测试11: TCP/UDP Sink 基本功能测试 ==========\n";
+
+    // 创建测试目录
+    mylog::util::File::createDirectory(mylog::util::File::path("./test_logs"));
+
+    const uint16_t TEST_PORT = 9990;
+
+    std::cout << "测试TCP和UDP Sink的基本构造和发送功能..." << std::endl;
+
+    // 测试TCP Sink构造
+    std::cout << "1. 创建TCP Sink..." << std::endl;
+    try {
+        mylog::LogSink::ptr tcp_sink = mylog::SinkFactory::create<mylog::TcpSink>(TEST_PORT, "127.0.0.1");
+        std::cout << "   ✅ TCP Sink创建成功" << std::endl;
+
+        // 测试发送数据
+        std::string tcp_test_msg = "[INFO][2024-12-18 12:00:00][test] TCP测试消息\n";
+        tcp_sink->log(tcp_test_msg.c_str(), tcp_test_msg.size());
+        std::cout << "   ✅ TCP数据发送完成" << std::endl;
+    } catch (const std::exception& e) {
+        std::cout << "   ❌ TCP Sink错误: " << e.what() << std::endl;
+    }
+
+    // 测试UDP Sink构造
+    std::cout << "2. 创建UDP Sink..." << std::endl;
+    try {
+        mylog::LogSink::ptr udp_sink = mylog::SinkFactory::create<mylog::UdpSink>(TEST_PORT, "127.0.0.1");
+        std::cout << "   ✅ UDP Sink创建成功" << std::endl;
+
+        // 测试发送数据
+        std::string udp_test_msg = "[INFO][2024-12-18 12:00:00][test] UDP测试消息\n";
+        udp_sink->log(udp_test_msg.c_str(), udp_test_msg.size());
+        std::cout << "   ✅ UDP数据发送完成" << std::endl;
+    } catch (const std::exception& e) {
+        std::cout << "   ❌ UDP Sink错误: " << e.what() << std::endl;
+    }
+
+    std::cout << "✅ TCP/UDP Sink基本功能测试完成" << std::endl;
+    std::cout << "注意：如果没有服务器运行在端口" << TEST_PORT << "，连接会失败但不会崩溃" << std::endl;
+}
+
+//====================测试12: 单独测试TCP客户端 ====================
+void test_tcp_client_only()
+{
+    std::cout << "\n========== 测试12: TCP客户端单独测试 ==========\n";
+
+    const uint16_t TEST_PORT = 8888;
+    std::atomic<bool> server_running{true};
+
+    // 启动简单的TCP服务器用于测试
+    std::thread server_thread([&]() {
+        int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (server_fd < 0) {
+            std::cout << "服务器socket创建失败" << std::endl;
+            return;
+        }
+
+        int opt = 1;
+        setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+        struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(TEST_PORT);
+        addr.sin_addr.s_addr = INADDR_ANY;
+
+        if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+            std::cout << "服务器bind失败" << std::endl;
+            close(server_fd);
+            return;
+        }
+
+        listen(server_fd, 5);
+        std::cout << "TCP测试服务器启动在端口 " << TEST_PORT << std::endl;
+
+        int client_fd = accept(server_fd, nullptr, nullptr);
+        if (client_fd >= 0) {
+            char buffer[1024];
+            ssize_t n = recv(client_fd, buffer, sizeof(buffer), 0);
+            if (n > 0) {
+                std::cout << "服务器收到TCP数据: " << std::string(buffer, n) << std::endl;
+            }
+            close(client_fd);
+        }
+        close(server_fd);
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    // 测试TCP客户端
+    std::cout << "测试TCP客户端连接..." << std::endl;
+    mylog::LogSink::ptr tcp_sink = mylog::SinkFactory::create<mylog::TcpSink>(TEST_PORT, "127.0.0.1");
+
+    std::string test_msg = "TCP客户端测试消息\n";
+    tcp_sink->log(test_msg.c_str(), test_msg.size());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    server_thread.join();
+
+    std::cout << "✅ TCP客户端单独测试完成" << std::endl;
+}
+
+//====================测试13: 单独测试UDP客户端 ====================
+void test_udp_client_only()
+{
+    std::cout << "\n========== 测试13: UDP客户端单独测试 ==========\n";
+
+    const uint16_t TEST_PORT = 7777;
+    std::atomic<bool> server_running{true};
+
+    // 启动简单的UDP服务器用于测试
+    std::thread server_thread([&]() {
+        int server_fd = socket(AF_INET, SOCK_DGRAM, 0);
+        if (server_fd < 0) {
+            std::cout << "UDP服务器socket创建失败" << std::endl;
+            return;
+        }
+
+        struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(TEST_PORT);
+        addr.sin_addr.s_addr = INADDR_ANY;
+
+        if (bind(server_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+            std::cout << "UDP服务器bind失败" << std::endl;
+            close(server_fd);
+            return;
+        }
+
+        std::cout << "UDP测试服务器启动在端口 " << TEST_PORT << std::endl;
+
+        char buffer[1024];
+        struct sockaddr_in client_addr;
+        socklen_t addr_len = sizeof(client_addr);
+
+        ssize_t n = recvfrom(server_fd, buffer, sizeof(buffer), 0,
+                           (struct sockaddr*)&client_addr, &addr_len);
+        if (n > 0) {
+            std::cout << "服务器收到UDP数据: " << std::string(buffer, n) << std::endl;
+        }
+        close(server_fd);
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+    // 测试UDP客户端
+    std::cout << "测试UDP客户端发送..." << std::endl;
+    mylog::LogSink::ptr udp_sink = mylog::SinkFactory::create<mylog::UdpSink>(TEST_PORT, "127.0.0.1");
+
+    std::string test_msg = "UDP客户端测试消息\n";
+    udp_sink->log(test_msg.c_str(), test_msg.size());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    server_thread.join();
+
+    std::cout << "✅ UDP客户端单独测试完成" << std::endl;
+}
+
 int main()
 {
     //Test_logger();
@@ -270,9 +437,15 @@ int main()
 
 
     
-    test_colored_stdout();
-    test_level_filter();
-    test_multi_sink();
+    // test_colored_stdout();
+    // test_level_filter();
+    // test_multi_sink();
     //test_log();
+
+    // TCP/UDP网络日志测试
+     //test_tcp_udp_logging();  
+    //test_tcp_client_only();
+    test_udp_client_only();
+
     return 0;
 }
