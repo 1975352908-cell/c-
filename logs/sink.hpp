@@ -217,13 +217,22 @@ private:
             _fd=socket(AF_INET,SOCK_DGRAM,0);
             if(_fd<0)
             {
-                perror("socket error");
+                std::cerr << "❌ UDP socket 创建失败: " << strerror(errno) << std::endl;
                 return;
             }
             memset(&_addr,0,sizeof(_addr));
             _addr.sin_family=AF_INET;
             _addr.sin_port=htons(_port);
             _addr.sin_addr.s_addr=inet_addr(_host.c_str());
+                // 改进：检查 IP 地址转换是否成功
+            if (inet_pton(AF_INET, _host.c_str(), &_addr.sin_addr) <= 0) 
+            {
+                std::cerr << "❌ 无效的 IP 地址: " << _host << std::endl;
+                close(_fd);
+                _fd = -1;
+                return;
+            }
+            std::cout << "✅ UDP 客户端创建成功 → " << _host << ":" << _port << std::endl;
         }
         ~UdpSink()
         {
@@ -276,6 +285,8 @@ private:
             msg.msg_iov=iov;
             msg.msg_iovlen = need_newline ? 2 : 1;//分散读写长度
             msg.msg_control=nullptr;
+             /*               bug修复，未完全初始化                 */
+            msg.msg_controllen = 0;
             (void)sendmsg(_fd,&msg,0);//忽略返回值;
         }
     };
