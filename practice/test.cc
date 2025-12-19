@@ -8,21 +8,24 @@
 //     return 0;
 // }
 
-#include"udp_server.hpp"
-#include"udp_client.hpp"
+#include"tcp_server.cpp"
+#include"tcp_client.cpp"
+#include<thread>
 int main()
 {
-    UdpServer server(8080,"127.0.0.1");
-    UdpClient client(8080,"127.0.0.1");
-    
-    // 客户端发送消息
-    client.send("Hello Server!");
-    
-    // 服务器接收并回复
-    std::string recv_msg;
-    server.recv(recv_msg);
-    
-    // 客户端接收服务器回复
-    std::string reply;
-    client.recv(reply);
+    TcpServer server(8081,"127.0.0.1");
+    //server线程;
+    std::thread server_thread([&]()
+    {
+        server.start();
+    });
+    TcpClient client(8081,"127.0.0.1");
+    //client线程;
+    std::thread client_thread([&](){
+        client.start();
+    });
+    //main线程等待server_thread线程结束;
+    client_thread.join();
+    server_thread.join();
+    return 0;
 }
