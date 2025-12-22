@@ -18,6 +18,8 @@
 #include<memory>
 #include<functional>
 #include<atomic>
+#include<deque>
+#include<unordered_map>
 #include<unistd.h>
 #include<sys/types.h>
 #include<sys/socket.h>
@@ -84,30 +86,30 @@ namespace mylog
             while(true)
             {
                 ssize_t n=::recv(client_fd, buffer.data(), buffer.size(), 0);
-                if(n<0)
+                if(n<=0)
                 {
                     ::close(client_fd);
                     return;
                 }
                 message.append(buffer.data(),n);
                 //游客能有多个换行符，所以要有一个循环来处理;
-                size_t pos=0;
+                size_t search_pos = 0;
                 while(true)
                 {
                     //看看是否读到了换行符;
-                    size_t newline_pos=message.find("\n",pos);//从pos开始查找换行符;
+                    size_t newline_pos=message.find("\n",search_pos);//从pos开始查找换行符;
                     if(newline_pos==std::string::npos)
                     {
-                        //清空message；
-                        message.clear();
+                        //保留未完整的一行
+                        message.erase(0, search_pos);
                         break;
                     }
                     //写入落地目录并且更新下标;
-                    std::string line=message.substr(pos,newline_pos-pos+1);
+                    std::string line=message.substr(search_pos,newline_pos-search_pos+1);
                     appendToFile(line);
-                    pos=newline_pos+1;
+                    search_pos=newline_pos+1;
                     //如果pos已经大于message.size()，则清空message;
-                    if(pos>=message.size())
+                    if(search_pos>=message.size())
                     {
                         message.clear();
                         break;

@@ -23,6 +23,7 @@
 #include<unistd.h>
 #include<sys/types.h>
 #include<sys/socket.h>
+#include<cerrno>
 namespace mylog
 {
     
@@ -287,7 +288,11 @@ private:
             msg.msg_control=nullptr;
              /*               bug修复，未完全初始化                 */
             msg.msg_controllen = 0;
-            (void)sendmsg(_fd,&msg,0);//忽略返回值;
+            ssize_t n = sendmsg(_fd,&msg,0);
+            if(n < 0)
+            {
+                std::cerr << "sendmsg error: " << strerror(errno) << std::endl;
+            }
         }
     };
 
@@ -349,7 +354,7 @@ private:
         }
         virtual void log(const char*data,size_t len)
         {
-            if(_fd<0 || connectServer()==false)
+            if(_fd<0 && connectServer()==false)
             {
                 return;
             }

@@ -267,7 +267,7 @@ namespace mylog
             if (key == "c") return std::make_shared<LoggerFormatItem>();
             if (key == "t") return std::make_shared<ThreadFormatItem>();
             if (key == "n") return std::make_shared<NLineFormatItem>();
-            if (key == "d") return std::make_shared<TimeFormatItem>();
+            if (key == "d") return std::make_shared<TimeFormatItem>(val.empty() ? "%H:%M:%S" : val);
             if (key == "f") return std::make_shared<FileFormatItem>();
             if (key == "l") return std::make_shared<LineFormatItem>();
             if (key == "T") return std::make_shared<TabFormatItem>();
