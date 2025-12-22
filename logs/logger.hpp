@@ -294,17 +294,18 @@ namespace mylog
          }
          void addLogger(Logger::ptr logger)
          {
-            if(hasLogger(logger->loggerName())) return;
-
-            std::unique_lock<std::mutex> lock(std::mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
+            if(_loggers.find(logger->loggerName()) != _loggers.end()) return;
             _loggers.insert({logger->loggerName(),logger});
          }
          bool hasLogger(const std::string& name)
          {
+            std::lock_guard<std::mutex> lock(_mutex);
             return _loggers.find(name)!=_loggers.end();
          }
          Logger::ptr getLogger(const std::string& name)
          {
+            std::lock_guard<std::mutex> lock(_mutex);
             auto it=_loggers.find(name);
             if(it!=_loggers.end())
             {

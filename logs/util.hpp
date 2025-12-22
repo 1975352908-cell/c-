@@ -55,24 +55,19 @@ namespace mylog
             //创建目录
             static void createDirectory(const std::string pathname)
             {
-                 //    ./abc/bd/de
-                 size_t pos=0,index=0;
-                 while(index<pathname.size())
-                 {
-                    pos=pathname.find_first_of("/\\",index);
-                    if(pos==std::string::npos)
+                if(pathname.empty()) return;
+                size_t pos = 0;
+                while(pos < pathname.size())
+                {
+                    size_t sep = pathname.find_first_of("/\\", pos);
+                    std::string parent_dir = pathname.substr(0, (sep == std::string::npos) ? pathname.size() : sep + 1);
+                    if(!parent_dir.empty() && exist(parent_dir)==false)
                     {
-                        mkdir(pathname.c_str(),0777);
+                        mkdir(parent_dir.c_str(),0777);
                     }
-                    std::string parent_dir=pathname.substr(0,pos+1);
-                    if(exist(parent_dir)==true)
-                    {
-                        index=pos+1;
-                        continue;
-                    }
-                    mkdir(parent_dir.c_str(),0777);
-                    index=pos+1;
-                 }
+                    if(sep == std::string::npos) break;
+                    pos = sep + 1;
+                }
             } 
         };
     }
