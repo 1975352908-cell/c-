@@ -28,11 +28,14 @@
 #include"util.hpp"
 #include<fstream>
 #include"level.hpp"
+#include<deque>
+#include<unordered_map>
 namespace mylog
 {
     class LogServer
     {
     public:
+        using ptr=std::shared_ptr<LogServer>;
         LogServer(uint16_t tcp_port = 9010, uint16_t udp_port = 9010, const std::string &store_path = "./server_logs/data.log", size_t keep_lines = 5000)
         :_tcp_port(tcp_port),_udp_port(udp_port),_store_path(store_path),_keep_lines(keep_lines)
         {

@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -Wall -g `mysql_config --cflags`
 LDFLAGS  = `mysql_config --libs` -lpthread
 
-TARGET = test_db
+TARGET = test
 SRCS = test.cpp
 
 $(TARGET): $(SRCS)

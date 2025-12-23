@@ -224,14 +224,6 @@ private:
             _addr.sin_family=AF_INET;
             _addr.sin_port=htons(_port);
             _addr.sin_addr.s_addr=inet_addr(_host.c_str());
-                // 改进：检查 IP 地址转换是否成功
-            if (inet_pton(AF_INET, _host.c_str(), &_addr.sin_addr) <= 0) 
-            {
-                std::cerr << "❌ 无效的 IP 地址: " << _host << std::endl;
-                close(_fd);
-                _fd = -1;
-                return;
-            }
             std::cout << "✅ UDP 客户端创建成功 → " << _host << ":" << _port << std::endl;
         }
         ~UdpSink()
@@ -378,6 +370,7 @@ private:
             }
         }
     };
+
     class SinkFactory
     {
     public:

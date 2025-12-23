@@ -9,6 +9,9 @@
 #include"logger.hpp"
 #include<string>
 #include<memory>
+#include"db_sink.hpp"
+#include<thread>
+#include<vector>
 namespace mylog
 {
     //1.提供获取指定日志器的全局接口(避免用户自己创建单例对象)

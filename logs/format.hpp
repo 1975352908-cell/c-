@@ -260,6 +260,7 @@ namespace mylog
         }
 
     private:
+        //"[%d{%H:%M:%S}][%t][%p][%c][%f:%l] %m%n"
         FormatItem::ptr createItem(const std::string& key,const std::string&val)
         {
             if (key == "m") return std::make_shared<MsgFormatItem>();

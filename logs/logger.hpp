@@ -292,13 +292,13 @@ namespace mylog
             static LoggerManager _logger_manager;
             return _logger_manager;
          }
-         void addLogger(Logger::ptr logger)
-         {
+        void addLogger(Logger::ptr logger)
+        {
             if(hasLogger(logger->loggerName())) return;
 
-            std::unique_lock<std::mutex> lock(std::mutex);
+            std::unique_lock<std::mutex> lock(_mutex);
             _loggers.insert({logger->loggerName(),logger});
-         }
+        }
          bool hasLogger(const std::string& name)
          {
             return _loggers.find(name)!=_loggers.end();

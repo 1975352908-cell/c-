@@ -6,51 +6,64 @@
 #ifndef __M_DB_SINK_H__
 #define __M_DB_SINK_H__
  #include "sink.hpp"
+#include <cstring>
+#include <ctime>
  #include <mysql/mysql.h>
  #include <iostream>
 namespace mylog
-{  
-    class MysqlSink : public mylog::LogSink
 {
-public:
-    struct LogParts
+    class MysqlSink : public LogSink
     {
-        std::string level;
-        std::string file;
-        std::string logger;
-        std::string payload;
-        int line;
-    };
-    using ptr=std::shared_ptr<MysqlSink>;
-    MysqlSink(const std::string&host,const std::string&user,const std::string&password,const std::string&database,int port)
-    :_host(host),_user(user),_password(password),_database(database),_port(port)
-    {
-        _conn = mysql_init(nullptr);
-        connect_mysql();
-        prepare_stmt(); // 初始化预处理语句
-    }
-    ~MysqlSink()
-    {
-        if(_stmt)
+    public:
+        struct LogParts
         {
-            mysql_stmt_close(_stmt);
-        }
-        if(_conn)
+            std::string level;
+            std::string logger;
+            std::string file;
+            std::string line;
+            std::string payload;
+        };
+        MysqlSink(const std::string&host,const std::string&user,const std::string&password,const std::string&database,int port)
+        :_host(host),_user(user),_password(password),_database(database),_port(port)
         {
-            ::mysql_close(_conn);
-        }
-    }
-    //将data数据写入到logs表;
-    virtual void log(const char*data,size_t len)
-    {
-        //写入logs表; 
-        try {
-            parse_log_line(data, len);
-            
-            MYSQL_BIND bind[5];
-            memset(bind, 0, sizeof(bind));
+            connect_mysql();
+            prepare_stmt();
 
-            // 1. Level
+        }
+        virtual ~MysqlSink()
+        {
+            if(_stmt)
+            {
+                mysql_stmt_close(_stmt);
+            }
+            if(_conn)
+            {
+                mysql_close(_conn);
+            }
+        }
+        virtual void log(const char*data,size_t len)
+        {
+            std::string_view s(data,len);
+            size_t pos=0;
+            parse_log_line(s,pos);
+            write_log();
+        }
+    private:
+        void write_log()
+        {
+            const char*sql=R"SQL(insert into logs(time,level,line,file,logger,payload) values(NOW(),?,?,?,?,?);)SQL";
+            _stmt=mysql_stmt_init(_conn);
+            if(mysql_stmt_prepare(_stmt,sql,strlen(sql))!=0)
+            {
+                std::cout<<"mysql_stmt_prepare failed,code:"<<mysql_errno(_conn)<<" "<<mysql_error(_conn)<<std::endl;
+                throw std::runtime_error("mysql_stmt_prepare failed");
+            }
+            //绑定bind;
+            MYSQL_BIND bind[5];
+            //初始化bind;
+            memset(bind,0,sizeof(bind));
+
+             // 1. Level
             unsigned long level_len = _parts.level.length();
             bind[0].buffer_type = MYSQL_TYPE_STRING;
             bind[0].buffer = (char*)_parts.level.data();
@@ -58,8 +71,11 @@ public:
             bind[0].length = &level_len;
 
             // 2. Line
-            bind[1].buffer_type = MYSQL_TYPE_LONG;
-            bind[1].buffer = (char*)&_parts.line;
+            unsigned long line_len = _parts.line.length();
+            bind[1].buffer_type = MYSQL_TYPE_STRING;
+            bind[1].buffer = (char*)_parts.line.c_str();
+            bind[1].buffer_length = line_len;
+            bind[1].length = (unsigned long*)(&line_len);
 
             // 3. File
             unsigned long file_len = _parts.file.length();
@@ -82,104 +98,114 @@ public:
             bind[4].buffer_length = payload_len;
             bind[4].length = &payload_len;
 
-            if (mysql_stmt_bind_param(_stmt, bind) != 0) {
-                std::cerr << "mysql_stmt_bind_param failed: " << mysql_stmt_error(_stmt) << std::endl;
-                return;
+            if(mysql_stmt_bind_param(_stmt,bind)!=0)
+            {
+                std::cout<<"mysql_stmt_bind_param failed,code:"<<mysql_errno(_conn)<<" "<<mysql_error(_conn)<<std::endl;
+                throw std::runtime_error("mysql_stmt_bind_param failed");
             }
-
-            if (mysql_stmt_execute(_stmt) != 0) {
-                std::cerr << "mysql_stmt_execute failed: " << mysql_stmt_error(_stmt) << std::endl;
+            if(mysql_stmt_execute(_stmt)!=0)
+            {
+                std::cout<<"mysql_stmt_execute failed,code:"<<mysql_errno(_conn)<<" "<<mysql_error(_conn)<<std::endl;
+                throw std::runtime_error("mysql_stmt_execute failed");
             }
-        } catch (const std::exception& e) {
-            std::cerr << "Log processing error: " << e.what() << std::endl;
         }
-    }
-private:
-    //解析日志行中的括号内容;
-    static std::string_view next_bracket_token(std::string_view s, size_t& pos)
-    {
-        size_t l = s.find('[', pos);
-        if (l == std::string_view::npos) throw std::runtime_error("bad log: no '['");
-        size_t r = s.find(']', l + 1);
-        if (r == std::string_view::npos) throw std::runtime_error("bad log: no ']'");
-        pos = r + 1;
-        return s.substr(l + 1, r - (l + 1));
-    }
-    //解析日志行;
-    void  parse_log_line(const char* data, size_t len) 
-    {
-        std::string_view s(data, len);
-        size_t pos = 0;
-    
-        (void)next_bracket_token(s, pos); // time
-        (void)next_bracket_token(s, pos); // tid
-        auto t_level  = next_bracket_token(s, pos);
-        auto t_logger = next_bracket_token(s, pos);
-        auto t_fileln = next_bracket_token(s, pos);
-    
-        auto colon = t_fileln.rfind(':');
-        if (colon == std::string_view::npos) throw std::runtime_error("bad log: file:line");
-        std::string file = (colon == std::string_view::npos) ? "unknown" : std::string(t_fileln.substr(0, colon));
-        int line = (colon == std::string_view::npos) ? 0 : std::stoi(std::string(t_fileln.substr(colon + 1)));
-    
-        std::string payload;
-        size_t first = payload.find_first_not_of(" \t\r\n");
-        if (first != std::string::npos) payload = payload.substr(first);
-        _parts = {
-            std::string(t_level),
-            std::move(file),
-            std::string(t_logger),
-            std::move(payload),
-            line
-        };
-    }
-    //准备预处理语句;
-    void prepare_stmt()
-    {
-        const char* sql = "INSERT INTO logs(time, level, line, file, logger, payload) VALUES (NOW(), ?, ?, ?, ?, ?)";
-        _stmt = mysql_stmt_init(_conn);
-        if (!_stmt) throw std::runtime_error("mysql_stmt_init failed");
-        if (mysql_stmt_prepare(_stmt, sql, strlen(sql)) != 0) {
-            throw std::runtime_error("mysql_stmt_prepare failed: " + std::string(mysql_stmt_error(_stmt)));
-        }
-    }
-    //连接数据库;
-    void connect_mysql()
-    {
-        if(!mysql_real_connect(_conn,_host.c_str(),_user.c_str(),_password.c_str(),_database.c_str(),_port,nullptr,_clientflag))
+        //解析日志行;
+        void parse_log_line(std::string_view s,size_t&pos)
         {
-            std::cout<<"mysql_real_connect failed,code:"<<mysql_errno(_conn)<<" "<<mysql_error(_conn)<<std::endl;
-            throw std::runtime_error("mysql_real_connect failed: " + std::string(mysql_error(_conn)));
+            next_bracket_token(s,pos);//时间;
+            next_bracket_token(s,pos);//线程id;
+            auto level=next_bracket_token(s,pos);//日志等级;
+            auto logger=next_bracket_token(s,pos);//日志器名称;
+            //[file:line]单独处理
+            if(s.find(':',pos)!=std::string_view::npos)
+            {
+                auto file=s.substr(pos+1,s.find(':',pos)-pos);
+                auto line=s.substr(s.find(':',pos)+1,s.find(']',pos)-s.find(':',pos)-1);
+                pos=s.find(']',pos)+1;
+                _parts.file=file;
+                _parts.line=line;
+            }
+            else
+            {
+                throw std::runtime_error("bad log: no '['");
+            }
+            //剩余部分为有效数据;
+            auto payload=s.substr(pos);
+            _parts.level=level;
+            _parts.logger=logger;
+            _parts.payload=payload;
         }
-        mysql_set_character_set(_conn,"utf8mb4");//设置字符集;
+        //分割提取括号中的内容,并返回括号中的内容;
+        static std::string_view next_bracket_token(std::string_view s,size_t&pos)
+        {
+            size_t l=s.find('[',pos);
+            if(l==std::string_view::npos)
+            {
+                throw std::runtime_error("bad log: no '['");
+            }
+            size_t r=s.find(']',l+1);
+            if(r==std::string_view::npos)
+            {
+                throw std::runtime_error("bad log: no ']'");
+            }
+            pos=r+1;
+            return s.substr(l+1,r-l-1);
+        }
+        void connect_mysql()
+        {
+            _conn=mysql_init(nullptr);
+            if(!_conn)
+            {
+                std::cout<<"mysql_init failed,code:"<<mysql_errno(_conn)<<" "<<mysql_error(_conn)<<std::endl;
+                throw std::runtime_error("mysql_init failed");
+            }
+            if(!mysql_real_connect(_conn,_host.c_str(),_user.c_str(),_password.c_str(),_database.c_str(),_port,nullptr,_clientflag))
+            {
+                std::cout<<"mysql_real_connect failed,code:"<<mysql_errno(_conn)<<" "<<mysql_error(_conn)<<std::endl;
+                throw std::runtime_error("mysql_real_connect failed");
+            }
+            //设置字符集;
+            mysql_set_character_set(_conn,"utf8mb4");
 
-        //从LogMsg中跟据日志信息创建对应表；   time,level,line,tid,file,logger,payload
-        const char*sql=R"SQL(create table if not exists logs(
-            id int primary key auto_increment,
-            time datetime,
-            level varchar(10),
-            line int,
-            file varchar(255),
-            logger varchar(255),
-            payload text
-        )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-        )SQL";
-        if(mysql_query(_conn,sql)!=0)
-        {
-            throw std::runtime_error("mysql_query failed");
         }
-    }
-private:
-    MYSQL*_conn=nullptr;
-    std::string _host;//数据库主机;
-    std::string _user;//数据库用户名;
-    std::string _password;//数据库密码;
-    std::string _database;//数据库名称;
-    int _port;//数据库端口;
-    std::string _unix_socket="";//数据库unix套接字;
-    unsigned long _clientflag=0;//数据库客户端标志;
-    struct LogParts _parts;//日志部分;
-    MYSQL_STMT*_stmt=nullptr;//数据库语句;
-};
+        void prepare_stmt()
+        {
+            _stmt=mysql_stmt_init(_conn);
+            if(!_stmt)
+            {
+                std::cout<<"mysql_stmt_init failed,code:"<<mysql_errno(_conn)<<" "<<mysql_error(_conn)<<std::endl;
+                throw std::runtime_error("mysql_stmt_init failed");
+            }
+            const char*create_sql=R"SQL(create table if not exists logs(
+                id int not null primary key auto_increment,
+                time datetime default null,
+                level varchar(10) default null,
+                line varchar(255) default null,
+                file varchar(255) default null,
+                logger varchar(255) default null,
+                payload text
+            )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            )SQL";
+            if(mysql_query(_conn,create_sql)!=0)
+            {
+                std::cout<<"mysql_query failed,code:"<<mysql_errno(_conn)<<" "<<mysql_error(_conn)<<std::endl;
+                throw std::runtime_error("mysql_query failed");
+            }
+            
+
+        }
+    private:
+        MYSQL*_conn=nullptr;
+        MYSQL_STMT* _stmt=nullptr;
+        std::string _host="localhost";
+        std::string _user="root";
+        std::string _password="";
+        std::string _database="db_logs";
+        int _port=3306;
+        std::string _unix_socket="";
+        unsigned long _clientflag=0;
+        LogParts _parts={};
+    };
+
 }
 #endif

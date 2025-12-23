@@ -12,3 +12,23 @@
       }
     ]
   }
+// {
+//   "version": "0.2.0",
+//   "configurations": [
+//       {
+//           "name": "Debug bench (LLDB)",
+//           "type": "lldb",
+//           "request": "launch",
+//           "program": "${workspaceFolder}/practice/test",  // 指定可执行文件路径
+//           "args": [],  // 如果有需要传递的命令行参数，可以在这里添加
+//           "cwd": "${workspaceFolder}/practice",  // 工作目录
+//           "stopOnEntry": false,  // 不在程序入口处停止
+//           "sourceLanguages": ["cpp"],  // 设置调试时使用的源代码语言
+//           "showDevDebugOutput": true,  // 显示调试输出
+//           "runInTerminal": true,  // 在终端中运行程序
+//           "setupCommands": [
+//               { "text": "settings set target.run-args --no-stop" }  // 设置多线程调试的附加选项
+//           ]
+//       }
+//   ]
+// }

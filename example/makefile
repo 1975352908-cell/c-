@@ -1,17 +1,12 @@
-CXX = g++
-CXXFLAGS = -Wall -g
-LDFLAGS  = -lpthread
+CXX      = g++
+CXXFLAGS = -Wall -Wextra -g -std=c++17 $(shell mysql_config --cflags)
+LDFLAGS  = $(shell mysql_config --libs) -lpthread
 
 TARGET = test
-SRCS = test.cc
+SRCS   = test.cc
 
 $(TARGET): $(SRCS)
-	$(CXX) $(CXXFLAGS) $(SRCS) -g -o  $(TARGET) $(LDFLAGS) -lpthread
+	$(CXX) $(CXXFLAGS) $(SRCS) -o $(TARGET) $(LDFLAGS)
 
 clean:
 	rm -f $(TARGET)
-	g++ -std=c++17 $^ -o $@
-	chmod +x $@  # 自动添加执行权限
-
-clean:
-	rm -f test
