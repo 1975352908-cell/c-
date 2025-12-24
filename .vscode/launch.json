@@ -5,9 +5,9 @@
         "name": "Debug bench (LLDB)",
         "type": "lldb",
         "request": "launch",
-        "program": "${workspaceFolder}/example/test",
+        "program": "${workspaceFolder}/logs/config_test",
         "args": [],
-        "cwd": "${workspaceFolder}/example",
+        "cwd": "${workspaceFolder}/logs",
         "stopOnEntry": false
       }
     ]

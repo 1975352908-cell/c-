@@ -1,10 +1,14 @@
-.PHONY:test
-# 正确的makefile（适配x86_64 Ubuntu）
-test: test.cc format.hpp util.hpp level.hpp message.hpp buffer.hpp
-    # 仅指定-std=c++13，不添加-m32/-m64等架构参数（默认适配当前系统）
-	g++ -std=c++17 $^ -o $@
-	chmod +x $@  # 自动添加执行权限
+.PHONY:config_test config_usage all clean
 
+all:config_test config_usage
+
+config_test:config_test.cpp config.hpp level.hpp
+	g++ -g -std=c++17 config_test.cpp -o config_test
+	chmod +x config_test
+
+
+config_usage:config_usage_example.cpp config.hpp level.hpp
+	g++ -g -std=c++17 config_usage_example.cpp -o config_usage
+	chmod +x config_usage
 clean:
-	rm -f test
-	rm -f test.txt.bak
+	rm -f config_test config_usage

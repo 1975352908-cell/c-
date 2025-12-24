@@ -80,17 +80,23 @@
 //     mylog::Logger::ptr logger=builder->build();
 //     bench("async_logger",10,1000000,100);
 // }
-void db_bench()
-{
-    std::shared_ptr<mylog::LoggerBuilder>builder=std::make_shared<mylog::GlobalLoggerBuilder>();
-    builder->buildLoggerName("db_logger");
-    builder->buildLoggerType(mylog::LoggerType::LOGGER_SYNC);
-    builder->buildSink<mylog::MysqlSink>("localhost","root","","db_logs",3306);
-    mylog::Logger::ptr logger=builder->build();
-    //组织指定长度的日志消息;
-    logger->debug(__FILE__, __LINE__, "数据库预处理语句测试 - DEBUG");
-}
+// void db_bench()
+// {
+//     std::shared_ptr<mylog::LoggerBuilder>builder=std::make_shared<mylog::GlobalLoggerBuilder>();
+//     builder->buildLoggerName("db_logger");
+//     builder->buildLoggerType(mylog::LoggerType::LOGGER_SYNC);
+//     builder->buildSink<mylog::MysqlSink>("localhost","root","","db_logs",3306);
+//     mylog::Logger::ptr logger=builder->build();
+//     //组织指定长度的日志消息;
+//     logger->debug(__FILE__, __LINE__, "数据库预处理语句测试 - DEBUG");
+// }
 
+using namespace mylog;
+void test()
+{
+    ConfigManager::getInstance().loadConfig("../logs/mylog.conf");
+    
+}
 int main()
 {
     test();

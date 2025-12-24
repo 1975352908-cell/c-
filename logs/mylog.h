@@ -12,6 +12,7 @@
 #include"db_sink.hpp"
 #include<thread>
 #include<vector>
+#include"config.hpp"
 namespace mylog
 {
     //1.提供获取指定日志器的全局接口(避免用户自己创建单例对象)
