@@ -1,12 +1,18 @@
-CXX      = g++
-CXXFLAGS = -Wall -Wextra -g -std=c++17 $(shell mysql_config --cflags)
-LDFLAGS  = $(shell mysql_config --libs) -lpthread
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -O2
+LDFLAGS = -lpthread
 
-TARGET = test
-SRCS   = test.cc
+all: server client
 
-$(TARGET): $(SRCS)
-	$(CXX) $(CXXFLAGS) $(SRCS) -o $(TARGET) $(LDFLAGS)
+server: server.cc
+	$(CXX) $(CXXFLAGS) -g -o $@ $< $(LDFLAGS)
+
+client: client.cc
+	$(CXX) $(CXXFLAGS) -g -o $@ $< $(LDFLAGS)
 
 clean:
-	rm -f $(TARGET)
+	rm -f server client *.log
+	rm -rf remote_logs
+
+.PHONY: all clean
+
