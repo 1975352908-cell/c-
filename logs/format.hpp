@@ -15,7 +15,6 @@
 #ifndef __M_FORMATR_h__
 #define __M_FORMATR_h__
 
-#include"util.hpp"
 #include"message.hpp"
 #include<memory>
 #include<ctime>

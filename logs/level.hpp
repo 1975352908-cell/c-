@@ -14,7 +14,7 @@ namespace mylog
             UNKNOW=0,
             DEBUG,
             INFO,
-            WORN,
+            WARN,
             ERROR,
             FATAL,
             OFF
@@ -25,7 +25,7 @@ namespace mylog
             {
                 case LogLevel::value::DEBUG:  return "DEBUG";
                 case LogLevel::value::INFO:   return "INFO";
-                case LogLevel::value::WORN:   return "WORN";
+                case LogLevel::value::WARN:   return "WARN";
                 case LogLevel::value::ERROR:  return "ERROR";
                 case LogLevel::value::FATAL:  return "FATAL";
                 case LogLevel::value::OFF:    return "OFF";

@@ -1,7 +1,7 @@
 /*日志落地模块实现
    1.抽象落地基类
    2.派生子类(根据不同的落地方向进行派生)
-   3.使用工厂模式进行创建与表示的芬利;
+   3.使用工厂模式进行创建与表示的分离;
 */
 #ifndef __M_SINK_H__
 #define __M_SINK_H__
@@ -124,7 +124,10 @@ namespace mylog
             util::File::createDirectory(util::File::path(_pathname));
             //打开文件;
             _ofs.open(_pathname,std::ios::binary | std::ios::app);
-            assert(_ofs.is_open());
+            if(_ofs.is_open()==false)
+            {
+                throw std::runtime_error("Failed to open log file: " + _pathname);
+            }
         }
         const std::string&file()
         {

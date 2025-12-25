@@ -264,9 +264,10 @@ namespace mylog
         LogLevel::value _level;
         LoggerType _type;
         std::string _formatter;
-        std::map<std::string, SinkConfig::ptr> _sinks;
+        std::map<std::string, SinkConfig::ptr> _sinks;//存储Sink配置;key是Sink的名称，value是Sink配置的指针;
     };
     
+
     // 辅助函数：字符串转日志等级
     inline LogLevel::value stringToLogLevel(const std::string& str)
     {
@@ -497,13 +498,13 @@ namespace mylog
         }
         
     private:
-        std::map<std::string, ConfigItem> _sections;//存储配置项;key是配置项的名称，value是配置项的值;
+        std::map<std::string, ConfigItem> _sections;//存储配置项;key是section的名称，value是ConfigItem的指针;
         std::map<std::string, LoggerConfig::ptr> _loggers;//存储Logger配置;key是Logger的名称，value是Logger配置的指针;
     };
     
 
 
-    
+
 
     // 配置管理器单例,这是单例模式中的懒汉模式;
     class ConfigManager

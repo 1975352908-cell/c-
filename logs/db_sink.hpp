@@ -49,6 +49,7 @@ namespace mylog
             write_log();
         }
     private:
+        
         void write_log()
         {
             const char*sql=R"SQL(insert into logs(time,level,line,file,logger,payload) values(NOW(),?,?,?,?,?);)SQL";

@@ -89,7 +89,7 @@ namespace mylog
        }
        void warn(const std::string&file,size_t line,const std::string &fmt,...)
        {
-         if(LogLevel::value::WORN<_limit_value)
+         if(LogLevel::value::WARN<_limit_value)
          {
             return;
          }
@@ -102,7 +102,7 @@ namespace mylog
             std::cout<<"vasprintf failed"<<std::endl;
          }
          va_end(ap);
-         serialize(LogLevel::value::WORN,file,line,res);
+         seriali  ze(LogLevel::value::WARN,file,line,res);
          free(res);
        }
        void error(const std::string&file,size_t line,const std::string &fmt,...)
@@ -294,13 +294,14 @@ namespace mylog
          }
         void addLogger(Logger::ptr logger)
         {
+            std::unique_lock<std::mutex> lock(_mutex);
             if(hasLogger(logger->loggerName())) return;
 
-            std::unique_lock<std::mutex> lock(_mutex);
             _loggers.insert({logger->loggerName(),logger});
         }
          bool hasLogger(const std::string& name)
          {
+            std::unique_lock<std::mutex> lock(_mutex);  // 加锁
             return _loggers.find(name)!=_loggers.end();
          }
          Logger::ptr getLogger(const std::string& name)
