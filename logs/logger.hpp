@@ -102,7 +102,7 @@ namespace mylog
             std::cout<<"vasprintf failed"<<std::endl;
          }
          va_end(ap);
-         seriali  ze(LogLevel::value::WARN,file,line,res);
+         serialize(LogLevel::value::WARN,file,line,res);
          free(res);
        }
        void error(const std::string&file,size_t line,const std::string &fmt,...)
@@ -292,17 +292,21 @@ namespace mylog
             static LoggerManager _logger_manager;
             return _logger_manager;
          }
-        void addLogger(Logger::ptr logger)
-        {
-            std::unique_lock<std::mutex> lock(_mutex);
-            if(hasLogger(logger->loggerName())) return;
-
-            _loggers.insert({logger->loggerName(),logger});
-        }
+         bool hasLoggerUnlocked(const std::string& name)
+         {
+             return _loggers.find(name) != _loggers.end();
+         }
+                
          bool hasLogger(const std::string& name)
          {
-            std::unique_lock<std::mutex> lock(_mutex);  // 加锁
-            return _loggers.find(name)!=_loggers.end();
+             std::unique_lock<std::mutex> lock(_mutex);
+             return hasLoggerUnlocked(name);
+         }
+         void addLogger(Logger::ptr logger)
+         {
+             std::unique_lock<std::mutex> lock(_mutex);
+             if (hasLoggerUnlocked(logger->loggerName())) return;
+             _loggers.insert({ logger->loggerName(), logger });
          }
          Logger::ptr getLogger(const std::string& name)
          {
