@@ -47,7 +47,8 @@ namespace mylog
        //需要注意，_limit_value限制了最低的输出等级，实现逻辑要进行判断;
        void debug(const std::string&file,size_t line,const std::string &fmt,...)
        {
-           if(LogLevel::value::DEBUG<_limit_value)
+         //读取时调用load()函数，保证读取的值是最新的;
+           if(LogLevel::value::DEBUG<_limit_value.load(std::memory_order_relaxed))
            {
               return;   
            }
@@ -65,13 +66,12 @@ namespace mylog
            //释放资源;
            va_end(ap);
            //序列化日志消息;
+           auto cleanup=std::unique_ptr<char,decltype(&free)>(res,free);
            serialize(LogLevel::value::DEBUG,file,line,res);
-           //释放资源;
-           free(res);
        }
        void info(const std::string&file,size_t line,const std::string &fmt,...)
        {
-         if(LogLevel::value::INFO<_limit_value)
+         if(LogLevel::value::INFO<_limit_value.load(std::memory_order_relaxed))
          {
             return;
          }
@@ -84,12 +84,12 @@ namespace mylog
             std::cout<<"vasprintf failed"<<std::endl;
          }
          va_end(ap);
+         auto cleanup=std::unique_ptr<char,decltype(&free)>(res,free);
          serialize(LogLevel::value::INFO,file,line,res);
-         free(res);  
        }
        void warn(const std::string&file,size_t line,const std::string &fmt,...)
        {
-         if(LogLevel::value::WARN<_limit_value)
+         if(LogLevel::value::WARN<_limit_value.load(std::memory_order_relaxed))
          {
             return;
          }
@@ -102,12 +102,12 @@ namespace mylog
             std::cout<<"vasprintf failed"<<std::endl;
          }
          va_end(ap);
+         auto cleanup=std::unique_ptr<char,decltype(&free)>(res,free);
          serialize(LogLevel::value::WARN,file,line,res);
-         free(res);
        }
        void error(const std::string&file,size_t line,const std::string &fmt,...)
        {
-         if(LogLevel::value::ERROR<_limit_value)
+         if(LogLevel::value::ERROR<_limit_value.load(std::memory_order_relaxed))
          {
             return;
          }
@@ -120,12 +120,12 @@ namespace mylog
             std::cout<<"vasprintf failed"<<std::endl;
          }
          va_end(ap);
+         auto cleanup=std::unique_ptr<char,decltype(&free)>(res,free);
          serialize(LogLevel::value::ERROR,file,line,res);
-         free(res);
        }
        void fatal(const std::string&file,size_t line,const std::string &fmt,...)
        {
-         if(LogLevel::value::FATAL<_limit_value)
+         if(LogLevel::value::FATAL<_limit_value.load(std::memory_order_relaxed))
          {
             return;
          }
@@ -138,8 +138,8 @@ namespace mylog
             std::cout<<"vasprintf failed"<<std::endl;
          }
          va_end(ap);
+         auto cleanup=std::unique_ptr<char,decltype(&free)>(res,free);
          serialize(LogLevel::value::FATAL,file,line,res);
-         free(res);
        }
     protected:
        void serialize(LogLevel::value level,const std::string&file,size_t line,char*str)
@@ -156,7 +156,7 @@ namespace mylog
        virtual void log(const char*data,size_t len)=0;
     //成员对象;
     protected:
-       AsyncType _looper_type;
+       AsyncType _looper_type;//异步模式类型;
        std::mutex _mutex;//锁
        std::string _logger_name; //日志器名称
        std::atomic<LogLevel::value> _limit_value;//日志等级
